@@ -14,13 +14,15 @@ A Pebble-native recreation of the classic Windows Neko desktop pet. The cat uses
 - The menu icon (`resources/images/menu_icon.png`) may also be swapped for a higher fidelity glyph.
 
 ## Build & Install
-1. Install the Rebble-supported Pebble SDK following [the setup guide](https://developer.rebble.io/developer.pebble.com/sdk/install/linux/). Ensure the `pebble` tool is on your path.
-2. From the repository root run:
+1. Install dependencies and the Rebble Pebble SDK by running `./scripts/install_pebble_sdk.sh` (wraps the [official setup guide](https://developer.rebble.io/developer.pebble.com/sdk/install/linux/)). The script installs apt dependencies, `pebble-tool`, the SDK/toolchains, and ensures basalt emulator assets exist. The full transcript is saved to `build/install_pebble_sdk.log`.
+2. Build and sideload to hardware from the repository root:
    ```
    pebble build
    pebble install --phone <watch_ip>
    ```
-3. For the emulator workflow, execute `./scripts/run_emulator.sh basalt` (or another platform such as `aplite`) to build, install into the QEMU-based emulator, and tail its logs in one step.
+3. Emulator workflow:
+   - `./scripts/run_emulator.sh basalt --headless` builds the app, installs it into the basalt QEMU emulator under `xvfb-run`, and tails logs until interrupted.
+   - `./scripts/install_and_run_emulator.sh basalt` performs the SDK installation step (if needed) and immediately launches the headless emulator.
 
 ## Automated Tests
 - Run the deterministic host-side state machine tests with `./scripts/run_tests.sh`.  
@@ -40,3 +42,9 @@ A Pebble-native recreation of the classic Windows Neko desktop pet. The cat uses
 - `src/neko_logic.c` / `src/neko_logic.h` – platform-agnostic state machine and animation engine.
 - `src/main.c` – Pebble UI shell that feeds timer ticks/events into the shared logic and renders bitmaps.
 - `resources/images/` – sprite frames + menu icon.
+- `appinfo.json` – canonical Pebble manifest used by the Rebble SDK (mirrors the metadata that previously lived under `package.json`).
+- `scripts/` – automation utilities (`install_pebble_sdk.sh`, `run_emulator.sh`, `install_and_run_emulator.sh`, `run_tests.sh`).
+
+## Troubleshooting
+- `pebble build` currently fails inside the Rebble SDK (`generate_resource_id_definitions` expects `/workspace/build/src/resource_ids.auto.c` but the file is never produced by SDK v5.0.13 when reading `appinfo.json`). The automation scripts surface the same failure after installing the toolchain. Once Rebble fixes the resource generator (or if you downgrade to an SDK release that still produces `resource_ids.auto.c`), re-run `./scripts/run_emulator.sh basalt --headless`.
+- Headless emulator launches require `xvfb-run` (installed automatically by `install_pebble_sdk.sh`). Running without `--headless` opens the SDL window if an X11 server is available.
